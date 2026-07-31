@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BSシネマ - CINEMA</title>
+  <style>
+    /* ==========================================
+       1. 基本スタイル & レイアウト
+       ========================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", "Georgia", serif;
+      background-color: #333333;
+      color: #333;
+      max-width: 500px;
+      margin: 0 auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* BSシネマ メインヘッダー */
+    .cinema-header {
+      background-color: #2b2b2b;
+      color: #fff;
+      padding: 10px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1a1a1a;
+      position: relative;
+      z-index: 100;
+    }
+
+    /* 実際のロゴ画像表示 */
+    .cinema-logo-img {
+      height: 42px;
+      width: auto;
+      display: block;
+      object-fit: contain;
+    }
+
+    /* MENUボタン */
+    .menu-btn {
+      background: none;
+      border: 1px solid #555;
+      color: #fff;
+      padding: 4px 10px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 10px;
+      font-family: sans-serif;
+      min-width: 54px;
+    }
+    .menu-btn span {
+      display: block;
+      font-size: 16px;
+      font-weight: bold;
+      line-height: 1.1;
+    }
+
+    /* ドロワーメニュー */
+    .drawer-menu {
+      display: none;
+      background-color: #121212;
+      border-bottom: 2px solid #333;
+      font-family: sans-serif;
+    }
+    .drawer-menu.active {
+      display: block;
+    }
+    .drawer-menu ul {
+      list-style: none;
+    }
+    .drawer-menu li a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 18px;
+      color: #fff;
+      text-decoration: none;
+      border-bottom: 1px solid #262626;
+      font-size: 14px;
+    }
+    .drawer-menu li a .arrow {
+      color: #888;
+      font-family: monospace;
+      font-size: 16px;
+    }
+
+    /* ページタイトルバー */
+    .page-title-bar {
+      background-color: #435465;
+      color: #fff;
+      padding: 10px 15px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: sans-serif;
+    }
+
+    /* カレンダータブ */
+    .calendar-tabs {
+      display: flex;
+      width: 100%;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 14px 5px;
+      text-align: center;
+      color: #fff;
+      font-weight: bold;
+      font-size: 15px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: sans-serif;
+    }
+    .tab-pink { background-color: #d46e8c; }
+    .tab-green { background-color: #8eb457; }
+
+    /* おすすめ映画 スライダー表示 */
+    .section-title-black {
+      background-color: #000;
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      font-family: sans-serif;
+    }
+    .hero-slider {
+      background-color: #000;
+      position: relative;
+      color: #fff;
+      padding-bottom: 15px;
+    }
+    .slider-img-container {
+      position: relative;
+      width: 100%;
+      height: 240px;
+      overflow: hidden;
+      background-color: #111;
+    }
+    .slider-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .slider-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 32px;
+      color: #0088ff;
+      background: rgba(0,0,0,0.4);
+      padding: 5px 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .slider-arrow.left { left: 0; }
+    .slider-arrow.right { right: 0; }
+    .hero-info {
+      padding: 12px 15px;
+      font-family: sans-serif;
+    }
+    .hero-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    /* チャンネルロゴ画像スタイル */
+    .channel-badge-img {
+      height: 18px;
+      width: auto;
+      vertical-align: middle;
+      margin-right: 6px;
+      display: inline-block;
+      border-radius: 2px;
+    }
+
+    .dots-container {
+      text-align: center;
+      margin-top: 5px;
+    }
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background-color: #666;
+      border-radius: 50%;
+      margin: 0 4px;
+    }
+    .dot.active { background-color: #0088ff; }
+
+    /* 映画リストセクション */
+    .section-header {
+      background-color: #435465;
+      color: #fff;
+      padding: 10px 15px;
+      font-size: 18px;
+      font-weight: bold;
+      font-family: sans-serif;
+    }
+    .date-header {
+      background-color: #d46e8c;
+      color: #fff;
+      padding: 8px 15px;
+      font-size: 14px;
+      font-weight: bold;
+      font-family: sans-serif;
+    }
+    .movie-list {
+      background-color: #fff;
+    }
+    .movie-card {
+      display: flex;
+      padding: 12px 15px;
+      border-bottom: 1px solid #e0e0e0;
+      gap: 12px;
+      font-family: sans-serif;
+    }
+    .movie-thumb {
+      width: 110px;
+      height: 75px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background-color: #eee;
+    }
+    .movie-details {
+      flex-grow: 1;
+    }
+    .movie-title {
+      font-size: 15px;
+      font-weight: bold;
+      line-height: 1.3;
+      color: #222;
+      margin-bottom: 4px;
+    }
+    .movie-sub {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 6px;
+    }
+    .movie-time {
+      font-size: 12px;
+      color: #333;
+      display: flex;
+      align-items: center;
+    }
+
+    /* リクエストボタンエリア */
+    .widget-area {
+      padding: 20px 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      background-color: #333;
+    }
+    .btn-orange {
+      background-color: #e59b4c;
+      color: #fff;
+      text-align: center;
+      padding: 15px;
+      font-weight: bold;
+      text-decoration: none;
+      font-size: 16px;
+      border-radius: 2px;
+      display: block;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      font-family: sans-serif;
+    }
+
+    /* 最下部（管理用フッター） */
+    .mini-footer {
+      margin-top: auto;
+      padding: 15px;
+      background-color: #222;
+      text-align: right;
+    }
+    .admin-link {
+      color: #666;
+      font-size: 11px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* ==========================================
+       2. 管理画面モーダル
+       ========================================== */
+    .admin-modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85);
+      z-index: 9999;
+      overflow-y: auto;
+      padding: 20px;
+      font-family: sans-serif;
+    }
+    .admin-content {
+      background: #fff;
+      max-width: 460px;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 8px;
+      color: #333;
+    }
+    .admin-content h2 {
+      font-size: 15px;
+      margin-bottom: 10px;
+      border-bottom: 2px solid #333;
+      padding-bottom: 4px;
+    }
+    .form-group {
+      margin-bottom: 10px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 11px;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 7px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .btn-submit {
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      font-size: 14px;
+    }
+    .btn-close {
+      background-color: #6c757d;
+      color: #fff;
+      border: none;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .admin-movie-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #eee;
+      font-size: 12px;
+    }
+    .btn-del {
+      background: #dc3545;
+      color: #fff;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BSシネマ メインヘッダー（実際のロゴ画像） -->
+  <header class="cinema-header">
+    <a href="#">
+      <img id="mainHeaderLogo" class="cinema-logo-img" src="1000013656_2.jpg" alt="BSシネマ CINEMA">
+    </a>
+    <!-- MENUボタン -->
+    <button class="menu-btn" onclick="toggleMenu()" id="menuToggleBtn">
+      <span id="menuIcon">≡</span>
+      MENU
+    </button>
+  </header>
+
+  <!-- ドロワーメニュー -->
+  <nav class="drawer-menu" id="drawerMenu">
+    <ul>
+      <li><a href="#" id="menuLinkTop"><span>トップページ</span><span class="arrow">＞</span></a></li>
+      <li><a href="#" id="menuLinkCalendar"><span>映画カレンダー</span><span class="arrow">＞</span></a></li>
+      <li><a href="#" id="menuLinkReview"><span>みんなの投稿レビュー</span><span class="arrow">＞</span></a></li>
+      <li><a href="#" id="menuLinkColumn"><span>シネマコラム</span><span class="arrow">＞</span></a></li>
+      <li><a href="#" id="menuLinkHowTo"><span>BS放送を見るには</span><span class="arrow">＞</span></a></li>
+    </ul>
+  </nav>
+
+  <!-- ページタイトルバー -->
+  <div class="page-title-bar">映画カレンダー</div>
+
+  <!-- カレンダータブ -->
+  <div class="calendar-tabs">
+    <a href="#" id="linkThisMonth" class="tab-btn tab-pink">今月の映画</a>
+    <a href="#" id="linkNextMonth" class="tab-btn tab-green">来月の映画</a>
+  </div>
+
+  <!-- おすすめ映画 (カルーセル) -->
+  <div class="section-title-black">おすすめ映画</div>
+  <div class="hero-slider">
+    <div class="slider-img-container">
+      <img id="heroImg" class="slider-img" src="" alt="おすすめ映画">
+      <div class="slider-arrow left" onclick="prevHero()">‹</div>
+      <div class="slider-arrow right" onclick="nextHero()">›</div>
+    </div>
+    <div class="hero-info">
+      <div class="hero-title" id="heroTitle"></div>
+      <div style="display: flex; align-items: center;">
+        <img id="heroBadgeImg" class="channel-badge-img" src="1000012922_2.png" alt="BSロゴ">
+        <span id="heroTime" style="font-size: 13px;"></span>
+      </div>
+      <div class="dots-container" id="heroDots"></div>
+    </div>
+  </div>
+
+  <!-- これから放送する映画 -->
+  <div class="section-header">これから放送する映画</div>
+  <div id="movieListContainer">
+    <!-- JSで一覧を自動生成 -->
+  </div>
+
+  <!-- リクエストボタン -->
+  <div class="widget-area">
+    <a href="#" id="linkRequest" class="btn-orange" target="_blank">映画をリクエストする</a>
+  </div>
+
+  <!-- 最下部管理リンク -->
+  <div class="mini-footer">
+    <button class="admin-link" onclick="openAdminModal()">管理者設定 (ログイン)</button>
+  </div>
+
+  <!-- ==========================================
+       2. 管理画面モーダル
+       ========================================== -->
+  <div class="admin-modal" id="adminModal">
+    <div class="admin-content">
+      <!-- ログイン -->
+      <div id="loginSection">
+        <h2>管理者ログイン</h2>
+        <div class="form-group">
+          <label>パスワード (初期設定: admin)</label>
+          <input type="password" id="adminPassword" placeholder="パスワード">
+        </div>
+        <button class="btn-submit" onclick="login()">ログイン</button>
+        <button class="btn-close" onclick="closeAdminModal()">閉じる</button>
+      </div>
+
+      <!-- 設定・追加パネル -->
+      <div id="panelSection" style="display: none;">
+
+        <h2>各画像・ロゴの設定</h2>
+        <div class="form-group"><label>ヘッダーロゴ画像ファイル名 / URL</label><input type="text" id="imgLogoMain" value="1000013656_2.jpg"></div>
+        <div class="form-group"><label>BSロゴ画像ファイル名 / URL</label><input type="text" id="imgLogoBS" value="1000012922_2.png"></div>
+        <div class="form-group"><label>BSP4Kロゴ画像ファイル名 / URL</label><input type="text" id="imgLogoBSP4K" value="1000012923_2.png"></div>
+
+        <h2 style="margin-top: 15px;">各リンクの設定 (URL)</h2>
+        <div class="form-group"><label>今月の映画 URL</label><input type="text" id="urlThisMonth"></div>
+        <div class="form-group"><label>来月の映画 URL</label><input type="text" id="urlNextMonth"></div>
+        <div class="form-group"><label>映画をリクエストする URL</label><input type="text" id="urlRequest"></div>
+        <div class="form-group"><label>メニュー：トップページ URL</label><input type="text" id="urlMenuTop"></div>
+        <div class="form-group"><label>メニュー：映画カレンダー URL</label><input type="text" id="urlMenuCalendar"></div>
+        <div class="form-group"><label>メニュー：みんなの投稿レビュー URL</label><input type="text" id="urlMenuReview"></div>
+        <div class="form-group"><label>メニュー：シネマコラム URL</label><input type="text" id="urlMenuColumn"></div>
+        <div class="form-group"><label>メニュー：BS放送を見るには URL</label><input type="text" id="urlMenuHowTo"></div>
+        <button class="btn-submit" style="background-color: #007bff; margin-bottom: 20px;" onclick="saveConfig()">画像・リンク設定を保存</button>
+
+        <h2>映画の新規追加</h2>
+        <form onsubmit="addMovie(event)">
+          <div class="form-group">
+            <label>映画タイトル</label>
+            <input type="text" id="inputTitle" required>
+          </div>
+          <div class="form-group">
+            <label>原題・制作年・国</label>
+            <input type="text" id="inputSub">
+          </div>
+          <div class="form-group">
+            <label>チャンネル（ロゴ）</label>
+            <select id="inputChannel">
+              <option value="BS">BS (青ロゴ)</option>
+              <option value="BSP4K">BSP4K (紫ロゴ)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>サムネイル画像URL</label>
+            <input type="url" id="inputImg" placeholder="https://..." required>
+          </div>
+          <div class="form-group">
+            <label>放送開始日時</label>
+            <input type="datetime-local" id="inputStartTime" required>
+          </div>
+          <div class="form-group">
+            <label>放送終了日時 (※終了後に自動削除されます)</label>
+            <input type="datetime-local" id="inputEndTime" required>
+          </div>
+          <div class="form-group">
+            <label>おすすめ映画 (スライダー) に追加する？</label>
+            <select id="inputIsHero">
+              <option value="false">いいえ</option>
+              <option value="true">はい</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-submit">登録する</button>
+        </form>
+
+        <h2 style="margin-top: 25px;">登録中の映画一覧 (手動削除)</h2>
+        <div id="adminMovieList"></div>
+
+        <button class="btn-close" onclick="closeAdminModal()" style="margin-top: 15px;">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       3. JavaScript
+       ========================================== -->
+  <script>
+    // デフォルト画像ファイル名
+    const defaultLogos = {
+      main: "1000013656_2.jpg",
+      bs: "1000012922_2.png",
+      bsp4k: "1000012923_2.png"
+    };
+
+    // デフォルト映画データ
+    const initialMovies = [
+      {
+        id: 1,
+        title: "プレミアムシネマ「ファンタスティック・プラネット」",
+        sub: "LA PLANÈTE SAUVAGE 1973年 フランス／チェコスロバキア",
+        channel: "BS",
+        img: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=500",
+        startTime: "2026-08-01T09:00",
+        endTime: "2026-08-01T10:13",
+        isHero: true
+      },
+      {
+        id: 2,
+        title: "ニュー・シネマ・パラダイス 【インターナショナル版】",
+        sub: "NUOVO CINEMA PARADISO 1989年 イタリア／フランス",
+        channel: "BSP4K",
+        img: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500",
+        startTime: "2026-08-01T13:00",
+        endTime: "2026-08-01T15:05",
+        isHero: false
+      }
+    ];
+
+    // デフォルトURL設定
+    const defaultUrls = {
+      thisMonth: "#",
+      nextMonth: "#",
+      request: "#",
+      menuTop: "#",
+      menuCalendar: "#",
+      menuReview: "#",
+      menuColumn: "#",
+      menuHowTo: "#"
+    };
+
+    // メニュー開閉トグル
+    function toggleMenu() {
+      const menu = document.getElementById('drawerMenu');
+      const icon = document.getElementById('menuIcon');
+      menu.classList.toggle('active');
+      
+      if (menu.classList.contains('active')) {
+        icon.textContent = '✕';
+      } else {
+        icon.textContent = '≡';
+      }
+    }
+
+    function getMovies() {
+      const data = localStorage.getItem('bs_cinema_movies');
+      return data ? JSON.parse(data) : initialMovies;
+    }
+
+    function saveMovies(movies) {
+      localStorage.setItem('bs_cinema_movies', JSON.stringify(movies));
+      render();
+    }
+
+    function getLogos() {
+      const data = localStorage.getItem('bs_cinema_logos');
+      return data ? JSON.parse(data) : defaultLogos;
+    }
+
+    function getUrls() {
+      const data = localStorage.getItem('bs_cinema_urls');
+      return data ? JSON.parse(data) : defaultUrls;
+    }
+
+    function saveConfig() {
+      const logos = {
+        main: document.getElementById('imgLogoMain').value || defaultLogos.main,
+        bs: document.getElementById('imgLogoBS').value || defaultLogos.bs,
+        bsp4k: document.getElementById('imgLogoBSP4K').value || defaultLogos.bsp4k
+      };
+      localStorage.setItem('bs_cinema_logos', JSON.stringify(logos));
+
+      const urls = {
+        thisMonth: document.getElementById('urlThisMonth').value || '#',
+        nextMonth: document.getElementById('urlNextMonth').value || '#',
+        request: document.getElementById('urlRequest').value || '#',
+        menuTop: document.getElementById('urlMenuTop').value || '#',
+        menuCalendar: document.getElementById('urlMenuCalendar').value || '#',
+        menuReview: document.getElementById('urlMenuReview').value || '#',
+        menuColumn: document.getElementById('urlMenuColumn').value || '#',
+        menuHowTo: document.getElementById('urlMenuHowTo').value || '#'
+      };
+      localStorage.setItem('bs_cinema_urls', JSON.stringify(urls));
+
+      applyConfig();
+      render();
+      alert('画像・リンク設定を保存しました！');
+    }
+
+    function applyConfig() {
+      const logos = getLogos();
+      const urls = getUrls();
+
+      // ヘッダーロゴ画像の反映
+      document.getElementById('mainHeaderLogo').src = logos.main;
+
+      // リンクの反映
+      document.getElementById('linkThisMonth').href = urls.thisMonth;
+      document.getElementById('linkNextMonth').href = urls.nextMonth;
+      document.getElementById('linkRequest').href = urls.request;
+
+      document.getElementById('menuLinkTop').href = urls.menuTop || '#';
+      document.getElementById('menuLinkCalendar').href = urls.menuCalendar || '#';
+      document.getElementById('menuLinkReview').href = urls.menuReview || '#';
+      document.getElementById('menuLinkColumn').href = urls.menuColumn || '#';
+      document.getElementById('menuLinkHowTo').href = urls.menuHowTo || '#';
+
+      // フォーム初期値の設定
+      document.getElementById('imgLogoMain').value = logos.main;
+      document.getElementById('imgLogoBS').value = logos.bs;
+      document.getElementById('imgLogoBSP4K').value = logos.bsp4k;
+
+      document.getElementById('urlThisMonth').value = urls.thisMonth || '';
+      document.getElementById('urlNextMonth').value = urls.nextMonth || '';
+      document.getElementById('urlRequest').value = urls.request || '';
+      document.getElementById('urlMenuTop').value = urls.menuTop || '';
+      document.getElementById('urlMenuCalendar').value = urls.menuCalendar || '';
+      document.getElementById('urlMenuReview').value = urls.menuReview || '';
+      document.getElementById('urlMenuColumn').value = urls.menuColumn || '';
+      document.getElementById('urlMenuHowTo').value = urls.menuHowTo || '';
+    }
+
+    function getChannelLogoSrc(ch) {
+      const logos = getLogos();
+      if (ch === 'BSP4K') return logos.bsp4k;
+      return logos.bs; // デフォルトBS
+    }
+
+    /* 放送終了時の自動削除 */
+    function autoCleanExpiredMovies() {
+      const movies = getMovies();
+      const now = new Date();
+      
+      const validMovies = movies.filter(movie => {
+        const endTime = new Date(movie.endTime);
+        return endTime > now;
+      });
+
+      if (validMovies.length !== movies.length) {
+        localStorage.setItem('bs_cinema_movies', JSON.stringify(validMovies));
+      }
+      return validMovies;
+    }
+
+    let heroIndex = 0;
+
+    function render() {
+      const movies = autoCleanExpiredMovies();
+
+      // 1. おすすめ映画
+      
