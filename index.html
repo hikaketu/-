@@ -48,15 +48,16 @@
 
     /* MENUボタン */
     .menu-btn {
-      background: none;
-      border: 1px solid #555;
+      background: #333;
+      border: 1px solid #666;
       color: #fff;
-      padding: 4px 10px;
+      padding: 5px 12px;
       cursor: pointer;
       text-align: center;
-      font-size: 10px;
+      font-size: 11px;
       font-family: sans-serif;
-      min-width: 54px;
+      min-width: 60px;
+      border-radius: 4px;
     }
     .menu-btn span {
       display: block;
@@ -73,7 +74,7 @@
       font-family: sans-serif;
     }
     .drawer-menu.active {
-      display: block;
+      display: block !important;
     }
     .drawer-menu ul {
       list-style: none;
@@ -282,15 +283,19 @@
       margin-top: auto;
       padding: 15px;
       background-color: #222;
-      text-align: right;
+      text-align: center;
     }
     .admin-link {
-      color: #666;
-      font-size: 11px;
-      background: none;
-      border: none;
+      color: #aaa;
+      font-size: 13px;
+      background: #444;
+      border: 1px solid #666;
+      padding: 8px 16px;
+      border-radius: 4px;
       cursor: pointer;
-      text-decoration: underline;
+      text-decoration: none;
+      display: inline-block;
+      font-family: sans-serif;
     }
 
     /* ==========================================
@@ -305,6 +310,9 @@
       overflow-y: auto;
       padding: 20px;
       font-family: sans-serif;
+    }
+    .admin-modal.active {
+      display: block !important;
     }
     .admin-content {
       background: #fff;
@@ -383,7 +391,7 @@
       <img id="mainHeaderLogo" class="cinema-logo-img" src="1000013656_2.jpg" alt="BSシネマ CINEMA">
     </a>
     <!-- MENUボタン -->
-    <button class="menu-btn" onclick="toggleMenu()" id="menuToggleBtn">
+    <button class="menu-btn" id="menuToggleBtn">
       <span id="menuIcon">≡</span>
       MENU
     </button>
@@ -414,8 +422,8 @@
   <div class="hero-slider">
     <div class="slider-img-container">
       <img id="heroImg" class="slider-img" src="" alt="おすすめ映画">
-      <div class="slider-arrow left" onclick="prevHero()">‹</div>
-      <div class="slider-arrow right" onclick="nextHero()">›</div>
+      <div class="slider-arrow left" id="prevHeroBtn">‹</div>
+      <div class="slider-arrow right" id="nextHeroBtn">›</div>
     </div>
     <div class="hero-info">
       <div class="hero-title" id="heroTitle"></div>
@@ -440,7 +448,7 @@
 
   <!-- 最下部管理リンク -->
   <div class="mini-footer">
-    <button class="admin-link" onclick="openAdminModal()">管理者設定 (ログイン)</button>
+    <button class="admin-link" id="adminOpenBtn">⚙ 管理者設定を開く</button>
   </div>
 
   <!-- ==========================================
@@ -452,11 +460,11 @@
       <div id="loginSection">
         <h2>管理者ログイン</h2>
         <div class="form-group">
-          <label>パスワード (初期設定: admin)</label>
-          <input type="password" id="adminPassword" placeholder="パスワード">
+          <label>パスワード (初期値: admin)</label>
+          <input type="password" id="adminPassword" value="admin" placeholder="パスワード">
         </div>
-        <button class="btn-submit" onclick="login()">ログイン</button>
-        <button class="btn-close" onclick="closeAdminModal()">閉じる</button>
+        <button class="btn-submit" id="loginBtn">ログイン</button>
+        <button class="btn-close" id="closeAdminBtn1">閉じる</button>
       </div>
 
       <!-- 設定・追加パネル -->
@@ -476,10 +484,10 @@
         <div class="form-group"><label>メニュー：みんなの投稿レビュー URL</label><input type="text" id="urlMenuReview"></div>
         <div class="form-group"><label>メニュー：シネマコラム URL</label><input type="text" id="urlMenuColumn"></div>
         <div class="form-group"><label>メニュー：BS放送を見るには URL</label><input type="text" id="urlMenuHowTo"></div>
-        <button class="btn-submit" style="background-color: #007bff; margin-bottom: 20px;" onclick="saveConfig()">画像・リンク設定を保存</button>
+        <button class="btn-submit" style="background-color: #007bff; margin-bottom: 20px;" id="saveConfigBtn">画像・リンク設定を保存</button>
 
         <h2>映画の新規追加</h2>
-        <form onsubmit="addMovie(event)">
+        <form id="addMovieForm">
           <div class="form-group">
             <label>映画タイトル</label>
             <input type="text" id="inputTitle" required>
@@ -520,7 +528,7 @@
         <h2 style="margin-top: 25px;">登録中の映画一覧 (手動削除)</h2>
         <div id="adminMovieList"></div>
 
-        <button class="btn-close" onclick="closeAdminModal()" style="margin-top: 15px;">閉じる</button>
+        <button class="btn-close" id="closeAdminBtn2" style="margin-top: 15px;">閉じる</button>
       </div>
     </div>
   </div>
@@ -572,37 +580,51 @@
       menuHowTo: "#"
     };
 
-    // メニュー開閉トグル
+    // 安全なlocalStorage読み書き関数
+    function safeStorageGet(key, fallback) {
+      try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function safeStorageSet(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        console.warn("Storage write failed", e);
+      }
+    }
+
+    // メニュー開閉
     function toggleMenu() {
       const menu = document.getElementById('drawerMenu');
       const icon = document.getElementById('menuIcon');
-      menu.classList.toggle('active');
+      if (!menu) return;
       
-      if (menu.classList.contains('active')) {
-        icon.textContent = '✕';
-      } else {
-        icon.textContent = '≡';
+      const isActive = menu.classList.toggle('active');
+      if (icon) {
+        icon.textContent = isActive ? '✕' : '≡';
       }
     }
 
     function getMovies() {
-      const data = localStorage.getItem('bs_cinema_movies');
-      return data ? JSON.parse(data) : initialMovies;
+      return safeStorageGet('bs_cinema_movies', initialMovies);
     }
 
     function saveMovies(movies) {
-      localStorage.setItem('bs_cinema_movies', JSON.stringify(movies));
+      safeStorageSet('bs_cinema_movies', movies);
       render();
     }
 
     function getLogos() {
-      const data = localStorage.getItem('bs_cinema_logos');
-      return data ? JSON.parse(data) : defaultLogos;
+      return safeStorageGet('bs_cinema_logos', defaultLogos);
     }
 
     function getUrls() {
-      const data = localStorage.getItem('bs_cinema_urls');
-      return data ? JSON.parse(data) : defaultUrls;
+      return safeStorageGet('bs_cinema_urls', defaultUrls);
     }
 
     function saveConfig() {
@@ -611,7 +633,7 @@
         bs: document.getElementById('imgLogoBS').value || defaultLogos.bs,
         bsp4k: document.getElementById('imgLogoBSP4K').value || defaultLogos.bsp4k
       };
-      localStorage.setItem('bs_cinema_logos', JSON.stringify(logos));
+      safeStorageSet('bs_cinema_logos', logos);
 
       const urls = {
         thisMonth: document.getElementById('urlThisMonth').value || '#',
@@ -623,7 +645,7 @@
         menuColumn: document.getElementById('urlMenuColumn').value || '#',
         menuHowTo: document.getElementById('urlMenuHowTo').value || '#'
       };
-      localStorage.setItem('bs_cinema_urls', JSON.stringify(urls));
+      safeStorageSet('bs_cinema_urls', urls);
 
       applyConfig();
       render();
@@ -635,60 +657,26 @@
       const urls = getUrls();
 
       // ヘッダーロゴ画像の反映
-      document.getElementById('mainHeaderLogo').src = logos.main;
+      const mainHeaderLogo = document.getElementById('mainHeaderLogo');
+      if (mainHeaderLogo) mainHeaderLogo.src = logos.main;
 
       // リンクの反映
-      document.getElementById('linkThisMonth').href = urls.thisMonth;
-      document.getElementById('linkNextMonth').href = urls.nextMonth;
-      document.getElementById('linkRequest').href = urls.request;
+      if (document.getElementById('linkThisMonth')) document.getElementById('linkThisMonth').href = urls.thisMonth;
+      if (document.getElementById('linkNextMonth')) document.getElementById('linkNextMonth').href = urls.nextMonth;
+      if (document.getElementById('linkRequest')) document.getElementById('linkRequest').href = urls.request;
 
-      document.getElementById('menuLinkTop').href = urls.menuTop || '#';
-      document.getElementById('menuLinkCalendar').href = urls.menuCalendar || '#';
-      document.getElementById('menuLinkReview').href = urls.menuReview || '#';
-      document.getElementById('menuLinkColumn').href = urls.menuColumn || '#';
-      document.getElementById('menuLinkHowTo').href = urls.menuHowTo || '#';
+      if (document.getElementById('menuLinkTop')) document.getElementById('menuLinkTop').href = urls.menuTop || '#';
+      if (document.getElementById('menuLinkCalendar')) document.getElementById('menuLinkCalendar').href = urls.menuCalendar || '#';
+      if (document.getElementById('menuLinkReview')) document.getElementById('menuLinkReview').href = urls.menuReview || '#';
+      if (document.getElementById('menuLinkColumn')) document.getElementById('menuLinkColumn').href = urls.menuColumn || '#';
+      if (document.getElementById('menuLinkHowTo')) document.getElementById('menuLinkHowTo').href = urls.menuHowTo || '#';
 
       // フォーム初期値の設定
-      document.getElementById('imgLogoMain').value = logos.main;
-      document.getElementById('imgLogoBS').value = logos.bs;
-      document.getElementById('imgLogoBSP4K').value = logos.bsp4k;
+      if (document.getElementById('imgLogoMain')) document.getElementById('imgLogoMain').value = logos.main;
+      if (document.getElementById('imgLogoBS')) document.getElementById('imgLogoBS').value = logos.bs;
+      if (document.getElementById('imgLogoBSP4K')) document.getElementById('imgLogoBSP4K').value = logos.bsp4k;
 
-      document.getElementById('urlThisMonth').value = urls.thisMonth || '';
-      document.getElementById('urlNextMonth').value = urls.nextMonth || '';
-      document.getElementById('urlRequest').value = urls.request || '';
-      document.getElementById('urlMenuTop').value = urls.menuTop || '';
-      document.getElementById('urlMenuCalendar').value = urls.menuCalendar || '';
-      document.getElementById('urlMenuReview').value = urls.menuReview || '';
-      document.getElementById('urlMenuColumn').value = urls.menuColumn || '';
-      document.getElementById('urlMenuHowTo').value = urls.menuHowTo || '';
-    }
-
-    function getChannelLogoSrc(ch) {
-      const logos = getLogos();
-      if (ch === 'BSP4K') return logos.bsp4k;
-      return logos.bs; // デフォルトBS
-    }
-
-    /* 放送終了時の自動削除 */
-    function autoCleanExpiredMovies() {
-      const movies = getMovies();
-      const now = new Date();
-      
-      const validMovies = movies.filter(movie => {
-        const endTime = new Date(movie.endTime);
-        return endTime > now;
-      });
-
-      if (validMovies.length !== movies.length) {
-        localStorage.setItem('bs_cinema_movies', JSON.stringify(validMovies));
-      }
-      return validMovies;
-    }
-
-    let heroIndex = 0;
-
-    function render() {
-      const movies = autoCleanExpiredMovies();
-
-      // 1. おすすめ映画
-      
+      if (document.getElementById('urlThisMonth')) document.getElementById('urlThisMonth').value = urls.thisMonth || '';
+      if (document.getElementById('urlNextMonth')) document.getElementById('urlNextMonth').value = urls.nextMonth || '';
+      if (document.getElementById('urlRequest')) document.getElementById('urlRequest').value = urls.request || '';
+      if (document.getElementById('urlMenuTop')) documen
